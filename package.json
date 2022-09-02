@@ -1,0 +1,13 @@
+{
+  "name": "superconductor-telemetry",
+  "version": "1.0.0",
+  "repository": "git@github.com:SuperFlyTV/superconductor-telemetry.git",
+  "author": "Johan Nyman <johan@nytamin.se>",
+  "license": "",
+  "scripts": {
+    "deploy": "doctl serverless deploy superconductor-telemetry",
+    "watch": "doctl serverless watch superconductor-telemetry",
+    "invoke:insert": "doctl serverless functions invoke telemetry/insert",
+    "invoke:report": "doctl serverless functions invoke telemetry/report -p "
+  }
+}

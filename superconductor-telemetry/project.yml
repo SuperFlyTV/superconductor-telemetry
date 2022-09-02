@@ -1,0 +1,33 @@
+environment: {}
+parameters: {}
+packages:
+  - name: telemetry
+    environment: {}
+    parameters: {}
+    annotations: {}
+    functions:
+      - name: insert
+        binary: false
+        main: ""
+        runtime: "nodejs:default"
+        web: true
+        parameters: {}
+        environment:
+          {
+            SUPABASE: "${SUPABASE}"
+          }
+        annotations: {}
+        limits: {}
+      - name: report
+        binary: false
+        main: ""
+        runtime: "nodejs:default"
+        web: true
+        parameters: {}
+        environment:
+          {
+            SUPABASE: "${SUPABASE}",
+            ACCESS: "${ACCESS}"
+          }
+        annotations: {}
+        limits: {}
