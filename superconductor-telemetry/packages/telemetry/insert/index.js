@@ -1,5 +1,9 @@
 const { createClient } = require('@supabase/supabase-js')
 
+/*
+ * This endpoint is used by SuperConductor to upload its data reports
+*/
+
 async function main(args) {
 	if (args.report) {
 		const supabase = createClient(

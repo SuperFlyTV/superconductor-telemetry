@@ -1,5 +1,9 @@
 const { createClient } = require('@supabase/supabase-js')
 
+/*
+ * This endpoint is used to generate reports
+ */
+
 async function main(args) {
 	if (!args.accessToken) {
 		return {
