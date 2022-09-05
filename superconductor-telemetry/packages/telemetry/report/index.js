@@ -35,11 +35,15 @@ async function main(args) {
 
 	const rows = result.data
 
-	let versions = {}
-	let dates = {}
-	let dateVersions = {}
-	let osType = {}
-	let osTypeVersion = {}
+	const reports = {}
+	const versions = {}
+	const dates = {}
+	const dateVersions = {}
+	const osType = {}
+	const osTypeVersion = {}
+	const acceptCount = {}
+	const reportCount = {}
+
 	for (const row of rows) {
 		let report
 		try {
@@ -52,7 +56,7 @@ async function main(args) {
 			if (!versions[report.version]) versions[report.version] = 0
 			versions[report.version]++
 
-			if (!dates[report.date]) dates[report.date] = {}
+			if (!dates[report.date]) dates[report.date] = 0
 			dates[report.date]++
 
 			// Version per date:
@@ -67,24 +71,38 @@ async function main(args) {
 			const osVersion = report.osType + '__' + report.osRelease
 			if (!osTypeVersion[osVersion]) osTypeVersion[osVersion] = 0
 			osTypeVersion[osVersion]++
+		} else if (report.reportType === 'accept-user-agreement') {
+			if (!acceptCount[report.userAgreementVersion])
+				acceptCount[report.userAgreementVersion] = 0
+			acceptCount[report.userAgreementVersion]++
 		}
+
+		if (!reportCount[report.reportType]) reportCount[report.reportType] = 0
+		reportCount[report.reportType]++
+
+		if (!reports[report.reportType]) reports[report.reportType] = []
+		reports[report.reportType].push(report)
 	}
 
 	versions = sortObject(versions)
 	dates = sortObject(dates)
-	for (let key of Object.keys(dates)) {
-		dates[key] = sortObject(dates[key])
+
+	dateVersions = sortObject(dateVersions)
+	for (let key of Object.keys(dateVersions)) {
+		dateVersions[key] = sortObject(dateVersions[key])
 	}
 
 	return {
 		body: {
-			_rowCount: rows.length,
+			_Count: rows.length,
+			_reportCount: reportCount,
 			_versions: versions,
 			_dates: dates,
 			_dateVersions: dateVersions,
 			_osType: osType,
 			_osTypeVersion: osTypeVersion,
-			rows
+			_acceptCount: acceptCount,
+			reports
 		}
 	}
 }
