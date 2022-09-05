@@ -1,20 +1,20 @@
 const { createClient } = require('@supabase/supabase-js')
 
-
 async function main(args) {
-
 	if (!args.accessToken) {
 		return {
-			"body": 'accessToken missing'
+			body: 'accessToken missing'
 		}
 	}
 	if (args.accessToken !== process.env['ACCESS']) {
 		return {
-			"body": 'accessToken incorrect'
+			body: 'accessToken incorrect'
 		}
 	}
-	const supabase = createClient('https://ksjcdmfakfozzlqmmgng.supabase.co', process.env['SUPABASE'])
-
+	const supabase = createClient(
+		'https://ksjcdmfakfozzlqmmgng.supabase.co',
+		process.env['SUPABASE']
+	)
 
 	const result = await supabase
 		.from('superconductor-telemetry')
@@ -23,7 +23,7 @@ async function main(args) {
 
 	if (result.error) {
 		return {
-			"body": {
+			body: {
 				error
 			}
 		}
@@ -44,7 +44,6 @@ async function main(args) {
 			continue
 		}
 
-
 		if (report.reportType === 'application-start') {
 			if (!versions[report.version]) versions[report.version] = 0
 			versions[report.version]++
@@ -54,7 +53,8 @@ async function main(args) {
 
 			// Version per date:
 			if (!dateVersions[report.date]) dateVersions[report.date] = {}
-			if (!dateVersions[report.date][report.version]) dateVersions[report.date][report.version] = 0
+			if (!dateVersions[report.date][report.version])
+				dateVersions[report.date][report.version] = 0
 			dateVersions[report.date][report.version]++
 
 			if (!osType[report.osType]) osType[report.osType] = 0
@@ -66,16 +66,14 @@ async function main(args) {
 		}
 	}
 
-
 	versions = sortObject(versions)
 	dates = sortObject(dates)
 	for (let key of Object.keys(dates)) {
 		dates[key] = sortObject(dates[key])
 	}
 
-
 	return {
-		"body": {
+		body: {
 			_rowCount: rows.length,
 			_versions: versions,
 			_dates: dates,
