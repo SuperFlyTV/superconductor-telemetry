@@ -7,10 +7,24 @@ async function main(args) {
 			process.env['SUPABASE']
 		)
 
+		let reportType = null
+		let version = null
+
+		try {
+			const parsed = JSON.parse(args.report)
+
+			reportType = parsed.reportType
+			version = parsed.version
+		} catch (err) {
+			// Ignore parse errors
+		}
+
 		const { error } = await supabase
 			.from('superconductor-telemetry')
 			.insert([
 				{
+					reportType,
+					version,
 					report: args.report
 				}
 			])
