@@ -35,14 +35,14 @@ async function main(args) {
 
 	const rows = result.data
 
-	const reports = {}
-	const versions = {}
-	const dates = {}
-	const dateVersions = {}
-	const osType = {}
-	const osTypeVersion = {}
-	const acceptCount = {}
-	const reportCount = {}
+	let reports = {}
+	let versions = {}
+	let dates = {}
+	let dateVersions = {}
+	let osType = {}
+	let osTypeVersion = {}
+	let acceptCount = {}
+	let reportCount = {}
 
 	for (const row of rows) {
 		let report
@@ -84,8 +84,14 @@ async function main(args) {
 		reports[report.reportType].push(report)
 	}
 
+	reports = sortObject(reports)
 	versions = sortObject(versions)
 	dates = sortObject(dates)
+	dateVersions = sortObject(dateVersions)
+	osType = sortObject(osType)
+	osTypeVersion = sortObject(osTypeVersion)
+	acceptCount = sortObject(acceptCount)
+	reportCount = sortObject(reportCount)
 
 	dateVersions = sortObject(dateVersions)
 	for (let key of Object.keys(dateVersions)) {
