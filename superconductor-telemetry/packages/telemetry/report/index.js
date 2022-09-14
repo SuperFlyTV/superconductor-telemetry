@@ -23,6 +23,7 @@ async function main(args) {
 	const result = await supabase
 		.from('superconductor-telemetry')
 		.select()
+		.neq('reportType', 'application-error')
 		.order('id', { ascending: false })
 
 	if (result.error) {
@@ -33,9 +34,25 @@ async function main(args) {
 		}
 	}
 
+	const resultErrors = await supabase
+		.from('superconductor-telemetry')
+		.select()
+		.eq('reportType', 'application-error')
+		.order('id', { ascending: false })
+		.range(0, 100)
+
+	if (resultErrors.error) {
+		return {
+			body: {
+				error
+			}
+		}
+	}
+
 	const rows = result.data
 
 	let reports = {}
+	const errors = []
 	let versions = {}
 	let dates = {}
 	let dateVersions = {}
@@ -87,7 +104,6 @@ async function main(args) {
 		reports[report.reportType].push(report)
 	}
 
-	reports = sortObject(reports)
 	versions = sortObject(versions)
 	dates = sortObject(dates)
 	dateVersions = sortObject(dateVersions)
@@ -101,6 +117,19 @@ async function main(args) {
 		dateVersions[key] = sortObject(dateVersions[key])
 	}
 
+	for (const row of resultErrors.data) {
+		let report
+		try {
+			report = JSON.parse(row.report)
+		} catch (err) {
+			continue
+		}
+
+		report.date = fixDate(report.date) // YYYY-M-D -> YYYY-MM-DD
+
+		errors.push(report)
+	}
+
 	return {
 		body: {
 			_Count: rows.length,
@@ -111,7 +140,7 @@ async function main(args) {
 			_osType: osType,
 			_osTypeVersion: osTypeVersion,
 			_acceptCount: acceptCount,
-			reports
+			errors: errors
 		}
 	}
 }
