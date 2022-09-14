@@ -53,6 +53,9 @@ async function main(args) {
 		}
 
 		if (report.reportType === 'application-start') {
+
+			report.date = fixDate(report.date) // YYYY-M-D -> YYYY-MM-DD
+
 			if (!versions[report.version]) versions[report.version] = 0
 			versions[report.version]++
 
@@ -125,6 +128,20 @@ function sortObject(obj) {
 		obj2[key] = obj[key]
 	}
 	return obj2
+}
+function fixDate(str) {
+	const match = `${str}`.match(/(\d+)-(\d+)-(\d+)/)
+	if (match) {
+		const y = match[1]
+		const m = match[2]
+		const d = match[3]
+
+		return `${pad(y, 4)}-${pad(m, 2)}-${pad(d, 2)}`
+	}
+	return str
+}
+function pad(str, length) {
+	return '000000000000'.slice(0, length - str.length) + str
 }
 
 module.exports = {
