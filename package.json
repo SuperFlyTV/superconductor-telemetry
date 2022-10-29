@@ -8,6 +8,8 @@
     "deploy": "doctl serverless deploy superconductor-telemetry",
     "watch": "doctl serverless watch superconductor-telemetry",
     "invoke:insert": "doctl serverless functions invoke telemetry/insert",
-    "invoke:report": "doctl serverless functions invoke telemetry/report -p "
+    "invoke:report": "doctl serverless functions invoke telemetry/report -p ",
+    "watchlocal": "nodemon invokelocal.js",
+    "watchlocal:report": "npm run watchlocal report"
   }
 }
