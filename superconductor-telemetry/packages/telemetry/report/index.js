@@ -20,16 +20,56 @@ async function main(args) {
 		process.env['SUPABASE']
 	)
 
-	const result = await supabase
+	const resultAppStart = await supabase
 		.from('superconductor-telemetry')
 		.select()
-		.neq('reportType', 'application-error')
+		.eq('reportType', 'application-start')
 		.order('id', { ascending: false })
 
-	if (result.error) {
+	if (resultAppStart.error) {
 		return {
 			body: {
-				error
+				error: resultAppStart.error
+			}
+		}
+	}
+
+	const resultApplicationStartCount = await supabase
+		.from('superconductor-telemetry')
+		.select('*', { count: 'exact', head: true })
+		.eq('reportType', 'application-start')
+
+	if (resultApplicationStartCount.error) {
+		return {
+			body: {
+				error: resultAppStart.error
+			}
+		}
+	}
+
+	const resultAcceptUserAgreement = await supabase
+		.from('superconductor-telemetry')
+		.select()
+		.eq('reportType', 'accept-user-agreement')
+		.order('id', { ascending: false })
+
+	if (resultAcceptUserAgreement.error) {
+		return {
+			body: {
+				error: resultAppStart.error
+			}
+		}
+	}
+
+	const resultUserAgreementCount = await supabase
+		.from('superconductor-telemetry')
+		.select('*', { count: 'exact', head: true })
+		.eq('reportType', 'accept-user-agreement')
+
+	if (resultUserAgreementCount.error) {
+		return {
+			body: {
+				error: resultAppStart.error
 			}
 		}
 	}
@@ -49,97 +89,75 @@ async function main(args) {
 		}
 	}
 
-	const rows = result.data
-
-	let reports = {}
 	const errors = []
 	let versions = {}
-	let dates = {}
+	let startsPerDate = {}
 	let dateVersions = {}
 	let osType = {}
 	let osTypeVersion = {}
 	let acceptCount = {}
-	let reportCount = {}
+	let acceptsPerDate = {}
 
-	for (const row of rows) {
-		let report
-		try {
-			report = JSON.parse(row.report)
-		} catch (err) {
-			continue
-		}
+	for (const row of resultAppStart.data) {
+		const report = parseReport(row.report)
+		if (!report) continue
 
-		if (report.reportType === 'application-start') {
+		if (!startsPerDate[report.date]) startsPerDate[report.date] = 0
+		startsPerDate[report.date]++
 
-			report.date = fixDate(report.date) // YYYY-M-D -> YYYY-MM-DD
+		// Version per date:
+		if (!dateVersions[report.date]) dateVersions[report.date] = {}
+		if (!dateVersions[report.date][report.version])
+			dateVersions[report.date][report.version] = 0
+		dateVersions[report.date][report.version]++
 
-			if (!versions[report.version]) versions[report.version] = 0
-			versions[report.version]++
+		if (!osType[report.osType]) osType[report.osType] = 0
+		osType[report.osType]++
 
-			if (!dates[report.date]) dates[report.date] = 0
-			dates[report.date]++
+		const osVersion = report.osType + '__' + report.osRelease
+		if (!osTypeVersion[osVersion]) osTypeVersion[osVersion] = 0
+		osTypeVersion[osVersion]++
+	}
+	for (const row of resultAcceptUserAgreement.data) {
+		const report = parseReport(row.report)
+		if (!report) continue
 
-			// Version per date:
-			if (!dateVersions[report.date]) dateVersions[report.date] = {}
-			if (!dateVersions[report.date][report.version])
-				dateVersions[report.date][report.version] = 0
-			dateVersions[report.date][report.version]++
+		if (!acceptCount[report.userAgreementVersion])
+			acceptCount[report.userAgreementVersion] = 0
+		acceptCount[report.userAgreementVersion]++
 
-			if (!osType[report.osType]) osType[report.osType] = 0
-			osType[report.osType]++
+		if (!acceptsPerDate[report.date]) acceptsPerDate[report.date] = 0
+		acceptsPerDate[report.date]++
+	}
+	for (const row of resultErrors.data) {
+		const report = parseReport(row.report)
+		if (!report) continue
 
-			const osVersion = report.osType + '__' + report.osRelease
-			if (!osTypeVersion[osVersion]) osTypeVersion[osVersion] = 0
-			osTypeVersion[osVersion]++
-		} else if (report.reportType === 'accept-user-agreement') {
-			if (!acceptCount[report.userAgreementVersion])
-				acceptCount[report.userAgreementVersion] = 0
-			acceptCount[report.userAgreementVersion]++
-		}
-
-		if (!reportCount[report.reportType]) reportCount[report.reportType] = 0
-		reportCount[report.reportType]++
-
-		if (!reports[report.reportType]) reports[report.reportType] = []
-		reports[report.reportType].push(report)
+		errors.push(report)
 	}
 
-	versions = sortObject(versions)
-	dates = sortObject(dates)
+	startsPerDate = sortObject(startsPerDate)
+	acceptsPerDate = sortObject(acceptsPerDate)
 	dateVersions = sortObject(dateVersions)
 	osType = sortObject(osType)
 	osTypeVersion = sortObject(osTypeVersion)
 	acceptCount = sortObject(acceptCount)
-	reportCount = sortObject(reportCount)
 
 	dateVersions = sortObject(dateVersions)
 	for (let key of Object.keys(dateVersions)) {
 		dateVersions[key] = sortObject(dateVersions[key])
 	}
 
-	for (const row of resultErrors.data) {
-		let report
-		try {
-			report = JSON.parse(row.report)
-		} catch (err) {
-			continue
-		}
-
-		report.date = fixDate(report.date) // YYYY-M-D -> YYYY-MM-DD
-
-		errors.push(report)
-	}
-
 	return {
 		body: {
-			_Count: rows.length,
-			_reportCount: reportCount,
-			_versions: versions,
-			_dates: dates,
-			_dateVersions: dateVersions,
+			_applicationStartsCount: resultApplicationStartCount.count,
+			_acceptUserAgreement: resultUserAgreementCount.count,
+			_applicationStartsPerDate: startsPerDate,
+			_userAgreementsPerDate: acceptsPerDate,
+			_applicationStartsPerDateAndVersion: dateVersions,
 			_osType: osType,
 			_osTypeVersion: osTypeVersion,
-			_acceptCount: acceptCount,
+
 			errors: errors
 		}
 	}
@@ -171,6 +189,15 @@ function fixDate(str) {
 }
 function pad(str, length) {
 	return '000000000000'.slice(0, length - str.length) + str
+}
+function parseReport(reportStr) {
+	try {
+		const report = JSON.parse(reportStr)
+		report.date = fixDate(report.date) // YYYY-M-D -> YYYY-MM-DD
+		return report
+	} catch (err) {
+		return null
+	}
 }
 
 module.exports = {
